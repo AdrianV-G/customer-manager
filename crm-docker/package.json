@@ -1,0 +1,12 @@
+{
+  "name": "ceo-crm",
+  "version": "1.0.0",
+  "description": "CRM Clientes - Desarrollo Empresarial CEO",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

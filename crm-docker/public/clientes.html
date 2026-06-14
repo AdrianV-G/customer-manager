@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM Clientes — Desarrollo Empresarial CEO</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root {
+  --midnight:   #0D1B2A;
+  --emerald:    #1D9E75;
+  --emerald-d:  #158A63;
+  --emerald-l:  #E4F5EF;
+  --gold:       #EF9F27;
+  --gold-l:     #FEF5E4;
+  --teal:       #9FE1CB;
+  --danger:     #C0392B;
+  --danger-l:   #FDECEA;
+  --warn:       #E67E22;
+  --warn-l:     #FEF5E4;
+  --bg:         #F0F4F3;
+  --surface:    #FFFFFF;
+  --surface2:   #F7FAFA;
+  --border:     #D0DDD9;
+  --text:       #0D1B2A;
+  --text2:      #3A5A52;
+  --text3:      #7A9E98;
+  --radius:     10px;
+  --shadow:     0 1px 3px rgba(13,27,42,0.08), 0 4px 16px rgba(13,27,42,0.05);
+  --shadow-md:  0 4px 20px rgba(13,27,42,0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; min-height: 100vh; }
+
+/* ── LOGIN ── */
+#login-screen {
+  position: fixed; inset: 0; background: var(--midnight);
+  z-index: 9999; display: flex; align-items: center; justify-content: center;
+}
+#login-screen.hidden { display: none; }
+.login-card {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(29,158,117,0.3);
+  border-radius: 16px; padding: 48px 40px; width: 100%; max-width: 380px;
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+}
+.login-logo { margin-bottom: 20px; }
+.login-logo svg { width: 52px; height: 52px; }
+.login-title { font-size: 18px; font-weight: 600; color: #fff; text-align: center; margin-bottom: 6px; }
+.login-sub { font-size: 13px; color: rgba(157,225,203,0.55); text-align: center; margin-bottom: 28px; line-height: 1.5; }
+.login-google-btn {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+  background: #fff; color: #1f1f1f; border: none; border-radius: 8px;
+  padding: 12px 20px; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500;
+  cursor: pointer; transition: box-shadow .15s, transform .1s; margin-bottom: 12px;
+}
+.login-google-btn:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.2); transform: translateY(-1px); }
+.login-google-btn svg { width: 18px; height: 18px; }
+.login-error { background: rgba(192,57,43,0.2); border: 1px solid rgba(192,57,43,0.4); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #f5a0a8; text-align: center; width: 100%; display: none; margin-bottom: 10px; }
+.login-error.visible { display: block; }
+.login-footer { font-size: 11px; color: rgba(157,225,203,0.25); text-align: center; margin-top: 24px; }
+#google-btn-container { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; overflow: hidden; }
+
+/* ── HEADER ── */
+.header {
+  background: var(--midnight); border-bottom: 2px solid var(--emerald);
+  padding: 0 24px; display: flex; align-items: center; justify-content: space-between;
+  height: 60px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 16px rgba(13,27,42,0.4);
+}
+.header-brand { display: flex; align-items: center; gap: 12px; }
+.header-brand-name { font-size: 13px; font-weight: 600; color: var(--teal); letter-spacing: 0.06em; text-transform: uppercase; }
+.header-badge { background: rgba(29,158,117,0.2); border: 1px solid rgba(29,158,117,0.35); color: var(--teal); font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; letter-spacing: 0.08em; text-transform: uppercase; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.user-chip { display: none; align-items: center; gap: 8px; background: rgba(255,255,255,0.07); border: 1px solid rgba(29,158,117,0.3); border-radius: 24px; padding: 4px 12px 4px 4px; cursor: pointer; transition: background .15s; }
+.user-chip:hover { background: rgba(255,255,255,0.12); }
+.user-chip.visible { display: flex; }
+.user-initials { width: 28px; height: 28px; border-radius: 50%; background: var(--emerald); color: #fff; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+.user-name { font-size: 12px; font-weight: 500; color: rgba(157,225,203,0.85); }
+.user-role { font-size: 10px; color: rgba(157,225,203,0.4); }
+
+/* ── LAYOUT ── */
+.app { display: flex; min-height: calc(100vh - 60px); }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 280px; min-width: 280px; background: var(--surface);
+  border-right: 1px solid var(--border); display: flex; flex-direction: column;
+  position: sticky; top: 60px; height: calc(100vh - 60px); overflow: hidden;
+}
+.sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); }
+.sidebar-title { font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
+.search-box { position: relative; }
+.search-box input { width: 100%; padding: 8px 12px 8px 32px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); font-size: 13px; color: var(--text); outline: none; transition: border-color .15s; }
+.search-box input:focus { border-color: var(--emerald); }
+.search-box::before { content: '🔍'; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; }
+.sidebar-stats { padding: 10px 16px; display: flex; gap: 8px; border-bottom: 1px solid var(--border); }
+.stat-pill { flex: 1; text-align: center; background: var(--surface2); border-radius: 8px; padding: 6px 4px; }
+.stat-pill .num { font-size: 16px; font-weight: 700; color: var(--emerald); }
+.stat-pill .lbl { font-size: 10px; color: var(--text3); }
+.client-list { overflow-y: auto; flex: 1; }
+.client-item {
+  padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer;
+  transition: background .12s; display: flex; align-items: center; gap: 10px;
+}
+.client-item:hover { background: var(--surface2); }
+.client-item.active { background: var(--emerald-l); border-left: 3px solid var(--emerald); }
+.client-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--midnight); color: var(--teal); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.client-info { flex: 1; min-width: 0; }
+.client-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.client-meta { font-size: 11px; color: var(--text3); }
+.client-projects-count { font-size: 11px; font-weight: 600; color: var(--emerald); background: var(--emerald-l); padding: 2px 6px; border-radius: 10px; flex-shrink: 0; }
+.inactive-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+.active-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--emerald); flex-shrink: 0; }
+.sidebar-add-btn { margin: 12px 16px; padding: 10px; background: var(--midnight); color: var(--teal); border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; width: calc(100% - 32px); transition: background .15s; }
+.sidebar-add-btn:hover { background: #1a2d42; }
+
+/* ── MAIN CONTENT ── */
+.main { flex: 1; overflow-y: auto; padding: 24px; }
+
+/* ── EMPTY STATE ── */
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 12px; color: var(--text3); }
+.empty-state .icon { font-size: 48px; opacity: 0.4; }
+.empty-state p { font-size: 14px; }
+
+/* ── CLIENT DETAIL ── */
+.client-detail { display: none; }
+.client-detail.visible { display: block; }
+.detail-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; gap: 16px; }
+.detail-avatar-block { display: flex; align-items: center; gap: 16px; }
+.detail-avatar { width: 56px; height: 56px; border-radius: 50%; background: var(--midnight); color: var(--teal); font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.detail-name { font-size: 22px; font-weight: 700; color: var(--text); }
+.detail-sub { font-size: 13px; color: var(--text2); margin-top: 2px; }
+.detail-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all .15s; }
+.btn-primary { background: var(--emerald); color: #fff; }
+.btn-primary:hover { background: var(--emerald-d); }
+.btn-secondary { background: var(--surface); color: var(--text2); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--surface2); }
+.btn-danger { background: var(--danger-l); color: var(--danger); border: 1px solid rgba(192,57,43,0.2); }
+.btn-danger:hover { background: rgba(192,57,43,0.15); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-gold { background: var(--gold-l); color: var(--warn); border: 1px solid rgba(239,159,39,0.3); }
+.btn-gold:hover { background: rgba(239,159,39,0.15); }
+
+/* ── TABS ── */
+.tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
+.tab { padding: 10px 20px; font-size: 13px; font-weight: 500; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s; }
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--emerald); border-bottom-color: var(--emerald); font-weight: 600; }
+
+/* ── INFO GRID ── */
+.info-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); }
+.info-card-title { font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 14px; }
+.info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.info-field label { font-size: 11px; color: var(--text3); display: block; margin-bottom: 3px; }
+.info-field .val { font-size: 14px; font-weight: 500; color: var(--text); }
+.info-field .val.mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.info-field input, .info-field select { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; color: var(--text); background: var(--surface2); outline: none; }
+.info-field input:focus, .info-field select:focus { border-color: var(--emerald); }
+.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.badge-green { background: var(--emerald-l); color: var(--emerald-d); }
+.badge-gray { background: var(--surface2); color: var(--text3); }
+.badge-gold { background: var(--gold-l); color: var(--warn); }
+
+/* ── FEE TOTAL BAR ── */
+.fee-bar { background: var(--midnight); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.fee-label { font-size: 12px; color: var(--teal); font-weight: 500; }
+.fee-amount { font-size: 28px; font-weight: 700; color: var(--gold); font-family: 'JetBrains Mono', monospace; }
+.fee-period { font-size: 11px; color: rgba(157,225,203,0.5); margin-top: 2px; }
+.fee-breakdown { display: flex; gap: 16px; }
+.fee-item { text-align: center; }
+.fee-item .f-num { font-size: 14px; font-weight: 600; color: #fff; }
+.fee-item .f-lbl { font-size: 10px; color: rgba(157,225,203,0.4); }
+
+/* ── PROYECTOS ── */
+.project-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  margin-bottom: 12px; overflow: hidden; box-shadow: var(--shadow); transition: box-shadow .15s;
+}
+.project-card:hover { box-shadow: var(--shadow-md); }
+.project-header {
+  padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer; background: var(--surface);
+}
+.project-id { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; color: var(--emerald); background: var(--emerald-l); padding: 3px 7px; border-radius: 6px; }
+.project-name { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.project-monto { font-size: 15px; font-weight: 700; color: var(--midnight); font-family: 'JetBrains Mono', monospace; }
+.project-periodo { font-size: 11px; color: var(--text3); }
+.project-chevron { color: var(--text3); font-size: 14px; transition: transform .2s; }
+.project-card.open .project-chevron { transform: rotate(180deg); }
+.project-body { display: none; padding: 0 16px 16px; border-top: 1px solid var(--border); }
+.project-card.open .project-body { display: block; }
+.project-body-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.pfield label { font-size: 11px; color: var(--text3); display: block; margin-bottom: 4px; }
+.pfield input, .pfield select { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; background: var(--surface2); color: var(--text); outline: none; }
+.pfield input:focus, .pfield select:focus { border-color: var(--emerald); }
+.pfield input[readonly] { background: var(--bg); color: var(--text2); cursor: default; }
+.pfield.full { grid-column: 1 / -1; }
+.pfield .val { font-size: 13px; font-weight: 500; color: var(--text); padding: 7px 0; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.toggle-row:last-child { border-bottom: none; }
+.toggle-label { font-size: 13px; color: var(--text); }
+.toggle { position: relative; width: 36px; height: 20px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; inset: 0; background: var(--border); border-radius: 20px; transition: .2s; cursor: pointer; }
+.toggle-slider:before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+.toggle input:checked + .toggle-slider { background: var(--emerald); }
+.toggle input:checked + .toggle-slider:before { transform: translateX(16px); }
+.services-section { margin-top: 12px; }
+.services-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
+.service-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--emerald-l); color: var(--emerald-d); border: 1px solid rgba(29,158,117,0.25); border-radius: 20px; padding: 4px 10px 4px 8px; font-size: 12px; font-weight: 500; margin: 3px; }
+.service-chip .remove { cursor: pointer; color: var(--emerald); font-size: 14px; line-height: 1; }
+.service-chip.inactive { background: var(--surface2); color: var(--text3); border-color: var(--border); }
+.add-service-row { display: flex; gap: 8px; margin-top: 8px; }
+.add-service-row input { flex: 1; padding: 7px 10px; border: 1px dashed var(--border); border-radius: 6px; font-size: 13px; background: var(--surface2); color: var(--text); outline: none; }
+.add-service-row input:focus { border-color: var(--emerald); border-style: solid; }
+.project-actions { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
+
+/* ── ADD PROJECT CARD ── */
+.add-project-card { border: 2px dashed var(--border); border-radius: var(--radius); padding: 20px; text-align: center; cursor: pointer; color: var(--text3); font-size: 13px; transition: all .15s; margin-bottom: 12px; }
+.add-project-card:hover { border-color: var(--emerald); color: var(--emerald); background: var(--emerald-l); }
+
+/* ── MODAL ── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(13,27,42,0.6); z-index: 500; align-items: center; justify-content: center; }
+.modal-overlay.visible { display: flex; }
+.modal { background: var(--surface); border-radius: 14px; padding: 28px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+.modal-title { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 20px; }
+.modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.modal-field { display: flex; flex-direction: column; gap: 5px; }
+.modal-field.full { grid-column: 1 / -1; }
+.modal-field label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
+.modal-field input, .modal-field select { padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--text); background: var(--surface2); outline: none; }
+.modal-field input:focus, .modal-field select:focus { border-color: var(--emerald); }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+
+/* ── TOAST ── */
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--midnight); color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 9999; box-shadow: var(--shadow-md); transform: translateY(80px); opacity: 0; transition: all .3s; }
+.toast.visible { transform: translateY(0); opacity: 1; }
+.toast.success { border-left: 3px solid var(--emerald); }
+.toast.error { border-left: 3px solid var(--danger); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="52" height="52" rx="12" fill="#0D1B2A"/>
+        <rect x="6" y="6" width="40" height="40" rx="8" stroke="#1D9E75" stroke-width="1.5" fill="rgba(29,158,117,0.07)"/>
+        <polyline points="10,40 18,30 24,34 32,22 42,10" fill="none" stroke="#EF9F27" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="42" cy="10" r="4" fill="none" stroke="#EF9F27" stroke-width="2"/>
+        <circle cx="42" cy="10" r="1.5" fill="#EF9F27"/>
+      </svg>
+    </div>
+    <div class="login-title">CRM Clientes</div>
+    <div class="login-sub">Desarrollo Empresarial CEO<br>Acceso restringido a administradores</div>
+    <div class="login-error" id="login-error"></div>
+    <button class="login-google-btn" onclick="iniciarLogin()">
+      <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Entrar con Google
+    </button>
+    <div id="google-btn-container"></div>
+    <div class="login-footer">Solo cuentas autorizadas · CEO CRM v1.0</div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-brand">
+    <svg width="32" height="32" viewBox="0 0 52 52" fill="none">
+      <rect width="52" height="52" rx="10" fill="rgba(29,158,117,0.15)"/>
+      <rect x="6" y="6" width="40" height="40" rx="7" stroke="#1D9E75" stroke-width="1.5" fill="none"/>
+      <polyline points="10,40 18,30 24,34 32,22 42,10" fill="none" stroke="#EF9F27" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span class="header-brand-name">CEO · CRM</span>
+    <span class="header-badge">Clientes</span>
+  </div>
+  <div class="header-right">
+    <div class="user-chip" id="user-chip" onclick="cerrarSesion()">
+      <div class="user-initials" id="user-initials">--</div>
+      <div>
+        <div class="user-name" id="user-name"></div>
+        <div class="user-role" id="user-role"></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- APP -->
+<div class="app" id="app" style="display:none;">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">Clientes</div>
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="Buscar cliente…" oninput="filtrarClientes(this.value)">
+      </div>
+    </div>
+    <div class="sidebar-stats">
+      <div class="stat-pill"><div class="num" id="stat-total">0</div><div class="lbl">Total</div></div>
+      <div class="stat-pill"><div class="num" id="stat-activos">0</div><div class="lbl">Activos</div></div>
+      <div class="stat-pill"><div class="num" id="stat-fee">$0</div><div class="lbl">Fee total</div></div>
+    </div>
+    <div class="client-list" id="client-list"></div>
+    <button class="sidebar-add-btn" onclick="abrirModalCliente()" id="btn-add-cliente">+ Nuevo cliente</button>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- Empty state -->
+    <div class="empty-state" id="empty-state">
+      <div class="icon">👤</div>
+      <p>Selecciona un cliente para ver sus detalles</p>
+    </div>
+
+    <!-- Client detail -->
+    <div class="client-detail" id="client-detail">
+
+      <div class="detail-header">
+        <div class="detail-avatar-block">
+          <div class="detail-avatar" id="d-avatar"></div>
+          <div>
+            <div class="detail-name" id="d-name"></div>
+            <div class="detail-sub" id="d-sub"></div>
+          </div>
+        </div>
+        <div class="detail-actions" id="d-actions">
+          <button class="btn btn-secondary btn-sm" onclick="editarCliente()">✏️ Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="toggleActivoCliente()" id="btn-toggle-activo">Desactivar</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('info')">Información</div>
+        <div class="tab" onclick="switchTab('proyectos')">Proyectos</div>
+      </div>
+
+      <!-- TAB INFO -->
+      <div id="tab-info">
+        <div class="info-card">
+          <div class="info-card-title">Datos del cliente</div>
+          <div class="info-grid" id="info-grid"></div>
+        </div>
+      </div>
+
+      <!-- TAB PROYECTOS -->
+      <div id="tab-proyectos" style="display:none;">
+        <!-- Fee bar -->
+        <div class="fee-bar">
+          <div>
+            <div class="fee-label">Fee total del cliente</div>
+            <div class="fee-amount" id="fee-total">$0</div>
+            <div class="fee-period" id="fee-desglose"></div>
+          </div>
+          <div class="fee-breakdown" id="fee-breakdown"></div>
+        </div>
+        <!-- Lista proyectos -->
+        <div id="proyectos-list"></div>
+        <div class="add-project-card" onclick="abrirModalProyecto()" id="btn-add-proyecto">
+          + Agregar proyecto
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- MODAL CLIENTE -->
+<div class="modal-overlay" id="modal-cliente">
+  <div class="modal">
+    <div class="modal-title" id="modal-cliente-title">Nuevo cliente</div>
+    <div class="modal-grid">
+      <div class="modal-field"><label>Nombre completo</label><input id="mc-nombre" type="text" placeholder="Rafael García"></div>
+      <div class="modal-field"><label>Clasificación</label>
+        <select id="mc-clasificacion">
+          <option>Empresario</option><option>Profesional de la salud</option><option>Empresa</option><option>Otro</option>
+        </select>
+      </div>
+      <div class="modal-field"><label>Celular personal</label><input id="mc-celular" type="text" placeholder="+52 222 000 0000"></div>
+      <div class="modal-field"><label>ID portafolio</label><input id="mc-portafolio" type="text" placeholder="521420918560367"></div>
+      <div class="modal-field full"><label>Cumpleaños</label><input id="mc-cumple" type="date"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="cerrarModal('modal-cliente')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarCliente()">Guardar cliente</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PROYECTO -->
+<div class="modal-overlay" id="modal-proyecto">
+  <div class="modal">
+    <div class="modal-title">Nuevo proyecto</div>
+    <div class="modal-grid">
+      <div class="modal-field"><label>Nombre del proyecto</label><input id="mp-nombre" type="text" placeholder="Be Unique"></div>
+      <div class="modal-field"><label>ID proyecto</label><input id="mp-id" type="text" placeholder="BEUN32020"></div>
+      <div class="modal-field"><label>Email doctor</label><input id="mp-email" type="email" placeholder="doctor@gmail.com"></div>
+      <div class="modal-field"><label>Ciudades</label><input id="mp-ciudades" type="text" placeholder="Puebla / CDMX"></div>
+      <div class="modal-field"><label>Monto de pago</label><input id="mp-monto" type="number" placeholder="16000"></div>
+      <div class="modal-field"><label>Tipo de pago</label>
+        <select id="mp-tipo-pago">
+          <option>Semanal</option><option>Quincenal</option><option>Mensual</option>
+        </select>
+      </div>
+      <div class="modal-field full"><label>Días de pago</label><input id="mp-dias" type="text" placeholder="Lunes de cada semana"></div>
+      <div class="modal-field full"><label>Servicio activo</label><input id="mp-servicio" type="text" placeholder="Community Manager (Ventas por Mensajes)"></div>
+      <div class="modal-field"><label>Fecha inicio</label><input id="mp-fecha" type="date"></div>
+      <div class="modal-field"><label>Nomenclatura</label><input id="mp-nomenclatura" type="text" placeholder="BEUN"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="cerrarModal('modal-proyecto')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarProyecto()">Crear proyecto</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════
+const GOOGLE_CLIENT_ID = 'TU_CLIENT_ID_AQUI.apps.googleusercontent.com';
+
+const ACCESOS = {
+  'adrianvg3107@gmail.com':  { nombre: 'Adrian Vera',     rol: 'Admin',         esAdmin: true  },
+  'scarletit99@gmail.com':   { nombre: 'Scarlet Ramirez', rol: 'Admin',         esAdmin: true  },
+};
+
+const N8N = {
+  clientes:         'https://proyectosn8n.healtmarketingmx.cloud/webhook/crm-get-clientes',
+  proyectos:        'https://proyectosn8n.healtmarketingmx.cloud/webhook/crm-get-proyectos',
+  updateCliente:    'https://proyectosn8n.healtmarketingmx.cloud/webhook/crm-update-cliente',
+  createCliente:    'https://proyectosn8n.healtmarketingmx.cloud/webhook/crm-create-cliente',
+  updateProyecto:   'https://proyectosn8n.healtmarketingmx.cloud/webhook/crm-update-proyecto',
+  createProyecto:   'https://proyectosn8n.healtmarketingmx.cloud/webhook/crm-create-proyecto',
+};
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let usuarioActual = null; // { nombre, rol, esAdmin, email }
+let clientes = [];
+let proyectosPorCliente = {}; // { id_cliente: [...] }
+let clienteActivo = null;
+let tabActiva = 'info';
+
+// ═══════════════════════════════════════
+// DATOS MOCK (mientras se conecta n8n)
+// ═══════════════════════════════════════
+const MOCK_CLIENTES = [
+  { _id: '1', nombre: 'Rafael García', celular_personal: '+52 222 670 8229', clasificacion: 'Empresario', activo: true, id_portafolio_comercial: '521420918560367', cumpleanos: null, created_at: '2026-06-08' },
+  { _id: '2', nombre: 'Dr. Michel Alán Chávez', celular_personal: '+52 222 100 2030', clasificacion: 'Profesional de la salud', activo: true, id_portafolio_comercial: '521000000000002', cumpleanos: null, created_at: '2026-06-08' },
+  { _id: '3', nombre: 'Medica Oriente', celular_personal: '+52 222 300 4050', clasificacion: 'Empresa', activo: false, id_portafolio_comercial: null, cumpleanos: null, created_at: '2026-06-08' },
+];
+
+const MOCK_PROYECTOS = {
+  '1': [
+    { _id: 'p1', id_proyecto: 'BEUN32020', nombre_proyecto: 'Be Unique', ciudades: 'Puebla/Guadalajara', fecha_inicio: '2020-03-10', monto_pago: 16000, tipo_pago: 'Semanal', dias_pago: 'Lunes de cada semana', pago_comision: false, pago_adelantado: false, activo: true, email_doctor: 'dr.rafael.a.garcia@gmail.com', servicio_activo: 'Community Manager (Ventas por Mensajes)', hace_jornadas: true, requiere_email_paciente: false, registro_consultas: true, id_cuenta_publicitaria: '147738286569283', id_pagina_fb: '100064357406775', id_pagina_ig: '17841431712419599', notas: null },
+    { _id: 'p2', id_proyecto: 'RAFG12022', nombre_proyecto: 'Dr. García Clínica Centro', ciudades: 'Puebla', fecha_inicio: '2022-01-15', monto_pago: 8000, tipo_pago: 'Mensual', dias_pago: '1ro de cada mes', pago_comision: true, pago_adelantado: false, activo: true, email_doctor: 'dr.rafael.garcia2@gmail.com', servicio_activo: 'Gestión de Redes + Publicidad', hace_jornadas: false, requiere_email_paciente: true, registro_consultas: false, id_cuenta_publicitaria: null, id_pagina_fb: null, id_pagina_ig: null, notas: 'Cliente prioritario' },
+  ],
+  '2': [
+    { _id: 'p3', id_proyecto: 'DRMC42026', nombre_proyecto: 'Dr. Michel Alán Chávez', ciudades: 'CDMX', fecha_inicio: '2026-04-01', monto_pago: 12000, tipo_pago: 'Quincenal', dias_pago: '1 y 15 de cada mes', pago_comision: false, pago_adelantado: true, activo: true, email_doctor: 'dr.michel@gmail.com', servicio_activo: 'Publicidad en Meta', hace_jornadas: false, requiere_email_paciente: false, registro_consultas: true, id_cuenta_publicitaria: '220000000000001', id_pagina_fb: null, id_pagina_ig: null, notas: null },
+  ],
+  '3': [],
+};
+
+// ═══════════════════════════════════════
+// GOOGLE LOGIN
+// ═══════════════════════════════════════
+function iniciarLogin() {
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleCredential,
+    auto_select: false,
+    use_fedcm_for_prompt: false,
+  });
+  const container = document.getElementById('google-btn-container');
+  container.innerHTML = '';
+  google.accounts.id.renderButton(container, { type: 'standard', theme: 'outline', size: 'large' });
+  setTimeout(() => {
+    const btn = container.querySelector('div[role=button]') || container.firstElementChild;
+    if (btn) btn.click();
+  }, 150);
+}
+
+function handleCredential(response) {
+  try {
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    const email = payload.email.toLowerCase();
+    const acceso = ACCESOS[email];
+    if (!acceso) {
+      const err = document.getElementById('login-error');
+      err.textContent = `Acceso denegado para ${payload.email}. Esta cuenta no está autorizada.`;
+      err.classList.add('visible');
+      return;
+    }
+    usuarioActual = { ...acceso, email };
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('user-chip').classList.add('visible');
+    document.getElementById('user-initials').textContent = acceso.nombre.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
+    document.getElementById('user-name').textContent = acceso.nombre;
+    document.getElementById('user-role').textContent = acceso.rol;
+    if (!acceso.esAdmin) {
+      document.getElementById('btn-add-cliente').style.display = 'none';
+      document.getElementById('d-actions').style.display = 'none';
+    }
+    iniciarApp();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function cerrarSesion() {
+  if (!confirm(`¿Cerrar sesión de ${usuarioActual.nombre}?`)) return;
+  usuarioActual = null;
+  document.getElementById('user-chip').classList.remove('visible');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('app').style.display = 'none';
+  if (google?.accounts) google.accounts.id.disableAutoSelect();
+}
+
+window.addEventListener('load', () => {
+  if (typeof google !== 'undefined' && google.accounts) {
+    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleCredential, auto_select: false, use_fedcm_for_prompt: false });
+  }
+});
+
+// ═══════════════════════════════════════
+// APP INIT
+// ═══════════════════════════════════════
+function iniciarApp() {
+  document.getElementById('app').style.display = 'flex';
+  // Usar mock por ahora, luego reemplazar con fetch a n8n
+  clientes = MOCK_CLIENTES;
+  proyectosPorCliente = MOCK_PROYECTOS;
+  renderSidebar();
+}
+
+// ═══════════════════════════════════════
+// SIDEBAR
+// ═══════════════════════════════════════
+function renderSidebar(filtro = '') {
+  const lista = document.getElementById('client-list');
+  const filtrados = clientes.filter(c => c.nombre.toLowerCase().includes(filtro.toLowerCase()));
+  const activos = clientes.filter(c => c.activo);
+  const feeTotal = calcFeeTotal();
+
+  document.getElementById('stat-total').textContent = clientes.length;
+  document.getElementById('stat-activos').textContent = activos.length;
+  document.getElementById('stat-fee').textContent = '$' + (feeTotal/1000).toFixed(0) + 'k';
+
+  lista.innerHTML = filtrados.map(c => {
+    const proyectos = proyectosPorCliente[c._id] || [];
+    const actProyectos = proyectos.filter(p => p.activo).length;
+    const isActive = clienteActivo?._id === c._id;
+    const iniciales = c.nombre.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
+    return `
+      <div class="client-item ${isActive ? 'active' : ''}" onclick="seleccionarCliente('${c._id}')">
+        <div class="client-avatar">${iniciales}</div>
+        <div class="client-info">
+          <div class="client-name">${c.nombre}</div>
+          <div class="client-meta">${c.clasificacion}</div>
+        </div>
+        <div class="${c.activo ? 'active-dot' : 'inactive-dot'}"></div>
+        ${actProyectos > 0 ? `<div class="client-projects-count">${actProyectos}p</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function filtrarClientes(val) { renderSidebar(val); }
+
+function calcFeeTotal() {
+  return clientes.filter(c => c.activo).reduce((sum, c) => {
+    const ps = proyectosPorCliente[c._id] || [];
+    return sum + ps.filter(p => p.activo).reduce((s, p) => s + (p.monto_pago || 0), 0);
+  }, 0);
+}
+
+// ═══════════════════════════════════════
+// SELECCIONAR CLIENTE
+// ═══════════════════════════════════════
+function seleccionarCliente(id) {
+  clienteActivo = clientes.find(c => c._id === id);
+  if (!clienteActivo) return;
+  renderSidebar(document.getElementById('search-input').value);
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('client-detail').classList.add('visible');
+  renderClienteDetalle();
+  switchTab('info');
+}
+
+function renderClienteDetalle() {
+  const c = clienteActivo;
+  const iniciales = c.nombre.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
+  document.getElementById('d-avatar').textContent = iniciales;
+  document.getElementById('d-name').textContent = c.nombre;
+  document.getElementById('d-sub').innerHTML = `<span class="badge ${c.activo ? 'badge-green' : 'badge-gray'}">${c.activo ? '● Activo' : '○ Inactivo'}</span> &nbsp; ${c.clasificacion}`;
+  document.getElementById('btn-toggle-activo').textContent = c.activo ? 'Desactivar' : 'Activar';
+
+  // Info grid
+  document.getElementById('info-grid').innerHTML = `
+    <div class="info-field"><label>Nombre completo</label><div class="val">${c.nombre}</div></div>
+    <div class="info-field"><label>Clasificación</label><div class="val">${c.clasificacion}</div></div>
+    <div class="info-field"><label>Celular personal</label><div class="val">${c.celular_personal || '—'}</div></div>
+    <div class="info-field"><label>ID Portafolio Comercial</label><div class="val mono">${c.id_portafolio_comercial || '—'}</div></div>
+    <div class="info-field"><label>Cumpleaños</label><div class="val">${c.cumpleanos || '—'}</div></div>
+    <div class="info-field"><label>Cliente desde</label><div class="val">${c.created_at ? c.created_at.slice(0,10) : '—'}</div></div>
+    <div class="info-field"><label>Estado</label><div class="val"><span class="badge ${c.activo ? 'badge-green' : 'badge-gray'}">${c.activo ? 'Activo' : 'Inactivo'}</span></div></div>
+  `;
+
+  renderProyectos();
+}
+
+// ═══════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════
+function switchTab(tab) {
+  tabActiva = tab;
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['info','proyectos'][i] === tab));
+  document.getElementById('tab-info').style.display = tab === 'info' ? 'block' : 'none';
+  document.getElementById('tab-proyectos').style.display = tab === 'proyectos' ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════════
+// PROYECTOS
+// ═══════════════════════════════════════
+function renderProyectos() {
+  const proyectos = proyectosPorCliente[clienteActivo._id] || [];
+  const activos = proyectos.filter(p => p.activo);
+  const feeCliente = activos.reduce((s, p) => s + (p.monto_pago || 0), 0);
+
+  document.getElementById('fee-total').textContent = '$' + feeCliente.toLocaleString('es-MX');
+  document.getElementById('fee-desglose').textContent = `${activos.length} proyecto${activos.length !== 1 ? 's' : ''} activo${activos.length !== 1 ? 's' : ''}`;
+
+  // Breakdown por tipo de pago
+  const byTipo = {};
+  activos.forEach(p => { byTipo[p.tipo_pago] = (byTipo[p.tipo_pago] || 0) + p.monto_pago; });
+  document.getElementById('fee-breakdown').innerHTML = Object.entries(byTipo).map(([tipo, monto]) =>
+    `<div class="fee-item"><div class="f-num">$${monto.toLocaleString('es-MX')}</div><div class="f-lbl">${tipo}</div></div>`
+  ).join('');
+
+  // Lista
+  document.getElementById('proyectos-list').innerHTML = proyectos.map(p => renderProyectoCard(p)).join('');
+
+  // Mostrar/ocultar add proyecto según permisos
+  document.getElementById('btn-add-proyecto').style.display = usuarioActual?.esAdmin ? 'block' : 'none';
+}
+
+function renderProyectoCard(p) {
+  const isAdmin = usuarioActual?.esAdmin;
+  return `
+  <div class="project-card" id="card-${p._id}">
+    <div class="project-header" onclick="toggleProyecto('${p._id}')">
+      <span class="project-id">${p.id_proyecto}</span>
+      <span class="project-name">${p.nombre_proyecto}</span>
+      <span class="badge ${p.activo ? 'badge-green' : 'badge-gray'}">${p.activo ? 'Activo' : 'Inactivo'}</span>
+      <div style="text-align:right;">
+        <div class="project-monto">$${(p.monto_pago||0).toLocaleString('es-MX')}</div>
+        <div class="project-periodo">${p.tipo_pago}</div>
+      </div>
+      <span class="project-chevron">▾</span>
+    </div>
+    <div class="project-body">
+      <div class="project-body-grid">
+        <div class="pfield">
+          <label>Email doctor</label>
+          ${isAdmin ? `<input type="email" value="${p.email_doctor||''}" onchange="marcarCambio('${p._id}','email_doctor',this.value)">` : `<div class="val">${p.email_doctor||'—'}</div>`}
+        </div>
+        <div class="pfield">
+          <label>Ciudades</label>
+          ${isAdmin ? `<input type="text" value="${p.ciudades||''}" onchange="marcarCambio('${p._id}','ciudades',this.value)">` : `<div class="val">${p.ciudades||'—'}</div>`}
+        </div>
+        <div class="pfield">
+          <label>Monto de pago</label>
+          ${isAdmin ? `<input type="number" value="${p.monto_pago||0}" onchange="marcarCambio('${p._id}','monto_pago',Number(this.value))">` : `<div class="val">$${(p.monto_pago||0).toLocaleString('es-MX')}</div>`}
+        </div>
+        <div class="pfield">
+          <label>Tipo de pago</label>
+          ${isAdmin ? `<select onchange="marcarCambio('${p._id}','tipo_pago',this.value)"><option ${p.tipo_pago==='Semanal'?'selected':''}>Semanal</option><option ${p.tipo_pago==='Quincenal'?'selected':''}>Quincenal</option><option ${p.tipo_pago==='Mensual'?'selected':''}>Mensual</option></select>` : `<div class="val">${p.tipo_pago||'—'}</div>`}
+        </div>
+        <div class="pfield full">
+          <label>Días de pago</label>
+          ${isAdmin ? `<input type="text" value="${p.dias_pago||''}" onchange="marcarCambio('${p._id}','dias_pago',this.value)">` : `<div class="val">${p.dias_pago||'—'}</div>`}
+        </div>
+        <div class="pfield full">
+          <label>Servicio activo</label>
+          ${isAdmin ? `<input type="text" value="${p.servicio_activo||''}" onchange="marcarCambio('${p._id}','servicio_activo',this.value)">` : `<div class="val">${p.servicio_activo||'—'}</div>`}
+        </div>
+        <div class="pfield">
+          <label>Fecha inicio</label>
+          <div class="val">${p.fecha_inicio||'—'}</div>
+        </div>
+        <div class="pfield">
+          <label>Cédula profesional</label>
+          ${isAdmin ? `<input type="text" value="${p.cedula_profesional||''}" onchange="marcarCambio('${p._id}','cedula_profesional',this.value)">` : `<div class="val">${p.cedula_profesional||'—'}</div>`}
+        </div>
+        <div class="pfield full">
+          <label>Notas</label>
+          ${isAdmin ? `<input type="text" value="${p.notas||''}" onchange="marcarCambio('${p._id}','notas',this.value)">` : `<div class="val">${p.notas||'—'}</div>`}
+        </div>
+      </div>
+
+      ${isAdmin ? `
+      <!-- Toggles -->
+      <div style="margin-top:14px;">
+        <div class="toggle-row">
+          <span class="toggle-label">Hace jornadas</span>
+          <label class="toggle"><input type="checkbox" ${p.hace_jornadas?'checked':''} onchange="marcarCambio('${p._id}','hace_jornadas',this.checked)"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Registro de consultas</span>
+          <label class="toggle"><input type="checkbox" ${p.registro_consultas?'checked':''} onchange="marcarCambio('${p._id}','registro_consultas',this.checked)"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Requiere email paciente</span>
+          <label class="toggle"><input type="checkbox" ${p.requiere_email_paciente?'checked':''} onchange="marcarCambio('${p._id}','requiere_email_paciente',this.checked)"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Pago por comisión</span>
+          <label class="toggle"><input type="checkbox" ${p.pago_comision?'checked':''} onchange="marcarCambio('${p._id}','pago_comision',this.checked)"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Pago adelantado</span>
+          <label class="toggle"><input type="checkbox" ${p.pago_adelantado?'checked':''} onchange="marcarCambio('${p._id}','pago_adelantado',this.checked)"><span class="toggle-slider"></span></label>
+        </div>
+      </div>` : ''}
+
+      <!-- IDs Redes sociales -->
+      <div style="margin-top:14px;">
+        <div class="services-title">IDs Cuentas publicitarias</div>
+        <div class="project-body-grid">
+          <div class="pfield"><label>Meta Ads</label>${isAdmin?`<input type="text" value="${p.id_cuenta_publicitaria||''}" onchange="marcarCambio('${p._id}','id_cuenta_publicitaria',this.value)" placeholder="—">` : `<div class="val mono">${p.id_cuenta_publicitaria||'—'}</div>`}</div>
+          <div class="pfield"><label>Ad Account</label>${isAdmin?`<input type="text" value="${p.id_cuenta_anuncios||''}" onchange="marcarCambio('${p._id}','id_cuenta_anuncios',this.value)" placeholder="—">` : `<div class="val mono">${p.id_cuenta_anuncios||'—'}</div>`}</div>
+          <div class="pfield"><label>Página FB</label>${isAdmin?`<input type="text" value="${p.id_pagina_fb||''}" onchange="marcarCambio('${p._id}','id_pagina_fb',this.value)" placeholder="—">` : `<div class="val mono">${p.id_pagina_fb||'—'}</div>`}</div>
+          <div class="pfield"><label>Instagram</label>${isAdmin?`<input type="text" value="${p.id_pagina_ig||''}" onchange="marcarCambio('${p._id}','id_pagina_ig',this.value)" placeholder="—">` : `<div class="val mono">${p.id_pagina_ig||'—'}</div>`}</div>
+          <div class="pfield full"><label>Google Ads</label>${isAdmin?`<input type="text" value="${p.id_cuenta_publicitaria_google||''}" onchange="marcarCambio('${p._id}','id_cuenta_publicitaria_google',this.value)" placeholder="—">` : `<div class="val mono">${p.id_cuenta_publicitaria_google||'—'}</div>`}</div>
+        </div>
+      </div>
+
+      ${isAdmin ? `
+      <div class="project-actions">
+        <button class="btn btn-danger btn-sm" onclick="toggleActivoProyecto('${p._id}')">${p.activo ? 'Desactivar' : 'Activar'} proyecto</button>
+        <button class="btn btn-primary btn-sm" onclick="guardarCambiosProyecto('${p._id}')">💾 Guardar cambios</button>
+      </div>` : ''}
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// EDICIÓN PROYECTOS
+// ═══════════════════════════════════════
+const cambiosPendientes = {}; // { id_proyecto: { campo: valor } }
+
+function marcarCambio(id, campo, valor) {
+  if (!cambiosPendientes[id]) cambiosPendientes[id] = {};
+  cambiosPendientes[id][campo] = valor;
+  // Actualizar fee en tiempo real si cambia monto
+  if (campo === 'monto_pago') {
+    const ps = proyectosPorCliente[clienteActivo._id] || [];
+    const p = ps.find(x => x._id === id);
+    if (p) { p.monto_pago = valor; renderProyectos(); }
+  }
+}
+
+function toggleProyecto(id) {
+  const card = document.getElementById('card-' + id);
+  card.classList.toggle('open');
+}
+
+function toggleActivoProyecto(id) {
+  const ps = proyectosPorCliente[clienteActivo._id] || [];
+  const p = ps.find(x => x._id === id);
+  if (!p) return;
+  p.activo = !p.activo;
+  mostrarToast(p.activo ? 'Proyecto activado' : 'Proyecto desactivado', 'success');
+  renderProyectos();
+  // TODO: llamar n8n update
+}
+
+function guardarCambiosProyecto(id) {
+  const cambios = cambiosPendientes[id];
+  if (!cambios || Object.keys(cambios).length === 0) { mostrarToast('Sin cambios pendientes', ''); return; }
+  // Actualizar mock local
+  const ps = proyectosPorCliente[clienteActivo._id] || [];
+  const p = ps.find(x => x._id === id);
+  if (p) Object.assign(p, cambios);
+  delete cambiosPendientes[id];
+  mostrarToast('Cambios guardados ✓', 'success');
+  renderProyectos();
+  // TODO: POST a N8N.updateProyecto con { _id: id, ...cambios }
+}
+
+// ═══════════════════════════════════════
+// EDICIÓN CLIENTE
+// ═══════════════════════════════════════
+function editarCliente() {
+  const c = clienteActivo;
+  document.getElementById('modal-cliente-title').textContent = 'Editar cliente';
+  document.getElementById('mc-nombre').value = c.nombre || '';
+  document.getElementById('mc-clasificacion').value = c.clasificacion || 'Empresario';
+  document.getElementById('mc-celular').value = c.celular_personal || '';
+  document.getElementById('mc-portafolio').value = c.id_portafolio_comercial || '';
+  document.getElementById('mc-cumple').value = c.cumpleanos || '';
+  abrirModal('modal-cliente');
+}
+
+function toggleActivoCliente() {
+  clienteActivo.activo = !clienteActivo.activo;
+  mostrarToast(clienteActivo.activo ? 'Cliente activado' : 'Cliente desactivado', 'success');
+  renderClienteDetalle();
+  renderSidebar();
+  // TODO: n8n update
+}
+
+// ═══════════════════════════════════════
+// MODALES
+// ═══════════════════════════════════════
+function abrirModalCliente() {
+  document.getElementById('modal-cliente-title').textContent = 'Nuevo cliente';
+  ['mc-nombre','mc-celular','mc-portafolio','mc-cumple'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('mc-clasificacion').value = 'Empresario';
+  abrirModal('modal-cliente');
+}
+
+function abrirModalProyecto() { abrirModal('modal-proyecto'); }
+function abrirModal(id) { document.getElementById(id).classList.add('visible'); }
+function cerrarModal(id) { document.getElementById(id).classList.remove('visible'); }
+
+function guardarCliente() {
+  const nombre = document.getElementById('mc-nombre').value.trim();
+  if (!nombre) { mostrarToast('El nombre es requerido', 'error'); return; }
+  // TODO: POST a N8N.createCliente / updateCliente
+  mostrarToast('Cliente guardado ✓', 'success');
+  cerrarModal('modal-cliente');
+}
+
+function guardarProyecto() {
+  const nombre = document.getElementById('mp-nombre').value.trim();
+  if (!nombre) { mostrarToast('El nombre del proyecto es requerido', 'error'); return; }
+  // TODO: POST a N8N.createProyecto
+  mostrarToast('Proyecto creado ✓', 'success');
+  cerrarModal('modal-proyecto');
+}
+
+// ═══════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════
+function mostrarToast(msg, tipo = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + tipo;
+  t.classList.add('visible');
+  setTimeout(() => t.classList.remove('visible'), 2800);
+}
+
+// Cerrar modales al click fuera
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('visible'); });
+});
+</script>
+</body>
+</html>
