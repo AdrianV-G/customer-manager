@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CRM Clientes — Desarrollo Empresarial CEO</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- <script src="https://accounts.google.com/gsi/client" async defer></script> -->
 <style>
 :root {
   --midnight:   #0D1B2A;
@@ -244,7 +244,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 <body>
 
 <!-- LOGIN -->
-<div id="login-screen">
+<div id="login-screen" style="display:none;">
   <div class="login-card">
     <div class="login-logo">
       <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -358,6 +358,11 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
             <div class="fee-period" id="fee-desglose"></div>
           </div>
           <div class="fee-breakdown" id="fee-breakdown"></div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:11px;color:rgba(157,225,203,0.5);margin-bottom:4px;">Antigüedad</div>
+            <div style="font-size:20px;font-weight:700;color:#fff;font-family:'JetBrains Mono',monospace;" id="antiguedad-valor">—</div>
+            <div style="font-size:10px;color:rgba(157,225,203,0.4);" id="antiguedad-desde">desde —</div>
+          </div>
         </div>
         <!-- Lista proyectos -->
         <div id="proyectos-list"></div>
@@ -426,21 +431,24 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 // ═══════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════
-const GOOGLE_CLIENT_ID = '110188198908-3gd6t1o8llvd9ag18ne7kjj7vep8u1oe.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = 'TU_CLIENT_ID_AQUI.apps.googleusercontent.com';
 
 const ACCESOS = {
   'adrianvg3107@gmail.com':  { nombre: 'Adrian Vera',     rol: 'Admin',         esAdmin: true  },
   'scarletit99@gmail.com':   { nombre: 'Scarlet Ramirez', rol: 'Admin',         esAdmin: true  },
 };
 
-const N8N = {
-  clientes:         'https://proyectosn8n.healtmarketingmx.cloud/webhook/crm-get-clientes',
-  proyectos:        'https://proyectosn8n.healtmarketingmx.cloud/webhook/crm-get-proyectos',
-  updateCliente:    'https://proyectosn8n.healtmarketingmx.cloud/webhook/crm-update-cliente',
-  createCliente:    'https://proyectosn8n.healtmarketingmx.cloud/webhook/crm-create-cliente',
-  updateProyecto:   'https://proyectosn8n.healtmarketingmx.cloud/webhook/crm-update-proyecto',
-  createProyecto:   'https://proyectosn8n.healtmarketingmx.cloud/webhook/crm-create-proyecto',
-};
+const N8N_CRM = 'https://proyectosn8n.healtmarketingmx.cloud/webhook/crm';
+
+async function crmRequest(operacion, data = {}) {
+  const res = await fetch(N8N_CRM, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ operacion, ...data })
+  });
+  if (!res.ok) throw new Error('Error ' + res.status);
+  return res.json();
+}
 
 // ═══════════════════════════════════════
 // STATE
@@ -455,20 +463,1358 @@ let tabActiva = 'info';
 // DATOS MOCK (mientras se conecta n8n)
 // ═══════════════════════════════════════
 const MOCK_CLIENTES = [
-  { _id: '1', nombre: 'Rafael García', celular_personal: '+52 222 670 8229', clasificacion: 'Empresario', activo: true, id_portafolio_comercial: '521420918560367', cumpleanos: null, created_at: '2026-06-08' },
-  { _id: '2', nombre: 'Dr. Michel Alán Chávez', celular_personal: '+52 222 100 2030', clasificacion: 'Profesional de la salud', activo: true, id_portafolio_comercial: '521000000000002', cumpleanos: null, created_at: '2026-06-08' },
-  { _id: '3', nombre: 'Medica Oriente', celular_personal: '+52 222 300 4050', clasificacion: 'Empresa', activo: false, id_portafolio_comercial: null, cumpleanos: null, created_at: '2026-06-08' },
+  {
+    "_id": "6a2658d6d2ff7e00bba6489f",
+    "num_cliente": "4320563416",
+    "nombre": "Irving de la Sancha",
+    "celular_personal": "+52 222 446 3721",
+    "clasificacion": "El Potencial",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "1030924475384850",
+    "created_at": "2026-06-08T05:48:23.523Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba648a5",
+    "num_cliente": "6927698008",
+    "nombre": "Tania Alcala",
+    "celular_personal": "+52 55 3408 7763",
+    "clasificacion": "Especialista",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "1102509038618011",
+    "created_at": "2026-06-08T05:48:23.524Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba648a3",
+    "num_cliente": "6212578976",
+    "nombre": "Emilio Meza",
+    "celular_personal": "+52 56 5647 7895",
+    "clasificacion": "El Potencial",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "2291386357913080",
+    "created_at": "2026-06-08T05:48:23.524Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba648a6",
+    "num_cliente": "3488312467",
+    "nombre": "Dyanzu Contreras",
+    "celular_personal": "+52 55 2212 2769",
+    "clasificacion": "El Potencial",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "1985553115509889",
+    "created_at": "2026-06-08T05:48:23.524Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba648a8",
+    "num_cliente": "4189818819",
+    "nombre": "Carlos David Rhenals",
+    "celular_personal": "+52 55 2243 5633",
+    "clasificacion": "Empresario",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "634931270189057",
+    "created_at": "2026-06-08T05:48:23.524Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba64898",
+    "num_cliente": "8571211919",
+    "nombre": "Leonardo Bénitez",
+    "celular_personal": "+52 55 3060 5129",
+    "clasificacion": "Empresario",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "338098774216940",
+    "created_at": "2026-06-08T05:48:23.523Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba648a1",
+    "num_cliente": "8659295934",
+    "nombre": "Misael Silva",
+    "celular_personal": "+52 56 4469 2766",
+    "clasificacion": "El Potencial",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "1461613925977391",
+    "created_at": "2026-06-08T05:48:23.524Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba648a7",
+    "num_cliente": "3939162642",
+    "nombre": "Karla Bendia",
+    "celular_personal": "+52 55 6785 1147",
+    "clasificacion": "Especialista",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "1065492604947381",
+    "created_at": "2026-06-08T05:48:23.524Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba648a9",
+    "num_cliente": "1189905824",
+    "nombre": "Michel Alán Chávez",
+    "celular_personal": "+52 56 1123 2731",
+    "clasificacion": "El Potencial",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "1342980830615369",
+    "created_at": "2026-06-08T05:48:23.524Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba6489b",
+    "num_cliente": "7369202522",
+    "nombre": "Luis Médina",
+    "celular_personal": "+52 998 111 4201",
+    "clasificacion": "Empresario",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "1433059816824768",
+    "created_at": "2026-06-08T05:48:23.523Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba648a4",
+    "num_cliente": "5957120854",
+    "nombre": "Eliyonai Torres",
+    "celular_personal": "+52 327 110 4017",
+    "clasificacion": "Especialista",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "306519402542432",
+    "created_at": "2026-06-08T05:48:23.524Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba648ab",
+    "num_cliente": "5735736027",
+    "nombre": "Alán Saavedra",
+    "celular_personal": "+52 962 318 9466",
+    "clasificacion": "El Potencial",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "608260542037847",
+    "created_at": "2026-06-08T05:48:23.524Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba6489a",
+    "num_cliente": "1799035743",
+    "nombre": "Irvin Cervantes",
+    "celular_personal": "+52 222 148 0609",
+    "clasificacion": "Empresario",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "241581568251776",
+    "created_at": "2026-06-08T05:48:23.523Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba6489e",
+    "num_cliente": "5886543300",
+    "nombre": "Alejandro Médina",
+    "celular_personal": "+52 55 4064 2836",
+    "clasificacion": "El Potencial",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "463595541698265",
+    "created_at": "2026-06-08T05:48:23.523Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba648a0",
+    "num_cliente": "4788572809",
+    "nombre": "Karem Delgado",
+    "celular_personal": "+52 55 1972 0232",
+    "clasificacion": "Especialista",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "424404993432625",
+    "created_at": "2026-06-08T05:48:23.523Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba648a2",
+    "num_cliente": "9432418089",
+    "nombre": "Ernesto Ramírez",
+    "celular_personal": "+52 55 4612 7206",
+    "clasificacion": "Empresario",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "3571780459782438",
+    "created_at": "2026-06-08T05:48:23.524Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba648ad",
+    "num_cliente": "4066939935",
+    "nombre": "Andres Montesinos",
+    "celular_personal": "+52 222 301 7848",
+    "clasificacion": "El Potencial",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "1391268045097487",
+    "created_at": "2026-06-08T05:48:23.524Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba64896",
+    "num_cliente": "6111315424",
+    "nombre": "Rafael García",
+    "celular_personal": "+52 222 670 8229",
+    "clasificacion": "Empresario",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "521420918560367",
+    "created_at": "2026-06-08T05:48:23.523Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba64897",
+    "num_cliente": "5859345681",
+    "nombre": "Oscar Pérez Osorio",
+    "celular_personal": "+52 55 1340 8447",
+    "clasificacion": "El Potencial",
+    "activo": true,
+    "cumpleanos": "6 de enero",
+    "id_portafolio_comercial": "396545874238764",
+    "created_at": "2026-06-08T05:48:23.523Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba6489d",
+    "num_cliente": "7955538957",
+    "nombre": "Ignacio Reyes",
+    "celular_personal": "+52 55 5403 6924",
+    "clasificacion": "Especialista",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "1050950325435446",
+    "created_at": "2026-06-08T05:48:23.523Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba648ae",
+    "num_cliente": "7221562784",
+    "nombre": "Nancy Verdin",
+    "celular_personal": "+52 663 202 5370",
+    "clasificacion": "El Potencial",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "1498164695086939",
+    "created_at": "2026-06-08T05:48:23.524Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba6489c",
+    "num_cliente": "1662931241",
+    "nombre": "Fernando Méndez",
+    "celular_personal": "+52 951 409 3001",
+    "clasificacion": "Especialista",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "1257623259093201",
+    "created_at": "2026-06-08T05:48:23.523Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba64899",
+    "num_cliente": "1635891656",
+    "nombre": "Claudia Ramirez",
+    "celular_personal": "+52 55 6608 9576",
+    "clasificacion": "Especialista",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "184036264115869",
+    "created_at": "2026-06-08T05:48:23.523Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba648ac",
+    "num_cliente": "3318939558",
+    "nombre": "Selene de la Mora",
+    "celular_personal": "+52 55 5967 9259",
+    "clasificacion": "El Potencial",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "1314464380018849",
+    "created_at": "2026-06-08T05:48:23.524Z"
+  },
+  {
+    "_id": "6a2658d6d2ff7e00bba648aa",
+    "num_cliente": "8848083096",
+    "nombre": "Javier Piri",
+    "celular_personal": "+52 662 257 9500",
+    "clasificacion": "El Potencial",
+    "activo": true,
+    "cumpleanos": null,
+    "id_portafolio_comercial": "494873501711639",
+    "created_at": "2026-06-08T05:48:23.524Z"
+  }
 ];
 
 const MOCK_PROYECTOS = {
-  '1': [
-    { _id: 'p1', id_proyecto: 'BEUN32020', nombre_proyecto: 'Be Unique', ciudades: 'Puebla/Guadalajara', fecha_inicio: '2020-03-10', monto_pago: 16000, tipo_pago: 'Semanal', dias_pago: 'Lunes de cada semana', pago_comision: false, pago_adelantado: false, activo: true, email_doctor: 'dr.rafael.a.garcia@gmail.com', servicio_activo: 'Community Manager (Ventas por Mensajes)', hace_jornadas: true, requiere_email_paciente: false, registro_consultas: true, id_cuenta_publicitaria: '147738286569283', id_pagina_fb: '100064357406775', id_pagina_ig: '17841431712419599', notas: null },
-    { _id: 'p2', id_proyecto: 'RAFG12022', nombre_proyecto: 'Dr. García Clínica Centro', ciudades: 'Puebla', fecha_inicio: '2022-01-15', monto_pago: 8000, tipo_pago: 'Mensual', dias_pago: '1ro de cada mes', pago_comision: true, pago_adelantado: false, activo: true, email_doctor: 'dr.rafael.garcia2@gmail.com', servicio_activo: 'Gestión de Redes + Publicidad', hace_jornadas: false, requiere_email_paciente: true, registro_consultas: false, id_cuenta_publicitaria: null, id_pagina_fb: null, id_pagina_ig: null, notas: 'Cliente prioritario' },
+  "5735736027": [
+    {
+      "_id": "6a265962d2ff7e00bba648c7",
+      "num_cliente": "5735736027",
+      "id_proyecto": "DRAS52026",
+      "nombre_proyecto": "Dr. Alán Saavedra",
+      "nombre_cliente": "Alán Saavedra",
+      "email_doctor": "alanchavez992@gmail.com",
+      "ciudades": "Área metropolitana de CDMX",
+      "fecha_inicio": {
+        "$date": "2026-05-01T00:00:00.000Z"
+      },
+      "monto_pago": 6500,
+      "tipo_pago": "Mensual",
+      "dias_pago": "1ero de cada mes",
+      "servicio_activo": "Gestión de Redes Sociales (Meta)",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "El Potencial",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": false,
+      "requiere_email_paciente": false,
+      "id_calendario": "alanchavez992@gmail.com",
+      "id_cuenta_publicitaria": {
+        "$numberLong": "984974890643318"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "612881308564408"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "61573460997536"
+      },
+      "id_pagina_ig": 17841473330830082,
+      "id_cuenta_publicitaria_google": "655-373-1699",
+      "cedula_profesional": "2509142002A00039",
+      "notas": null,
+      "ubicaciones": []
+    }
   ],
-  '2': [
-    { _id: 'p3', id_proyecto: 'DRMC42026', nombre_proyecto: 'Dr. Michel Alán Chávez', ciudades: 'CDMX', fecha_inicio: '2026-04-01', monto_pago: 12000, tipo_pago: 'Quincenal', dias_pago: '1 y 15 de cada mes', pago_comision: false, pago_adelantado: true, activo: true, email_doctor: 'dr.michel@gmail.com', servicio_activo: 'Publicidad en Meta', hace_jornadas: false, requiere_email_paciente: false, registro_consultas: true, id_cuenta_publicitaria: '220000000000001', id_pagina_fb: null, id_pagina_ig: null, notas: null },
+  "5957120854": [
+    {
+      "_id": "6a265962d2ff7e00bba648bf",
+      "num_cliente": "5957120854",
+      "id_proyecto": "DRET22025",
+      "nombre_proyecto": "Dr. Eliyonai Torres",
+      "nombre_cliente": "Eliyonai Torres",
+      "email_doctor": "eatoboy@hotmail.com",
+      "ciudades": "Área metropolitana de CDMX",
+      "fecha_inicio": {
+        "$date": "2025-02-25T00:00:00.000Z"
+      },
+      "monto_pago": 6500,
+      "tipo_pago": "Mensual",
+      "dias_pago": "14 de cada mes",
+      "servicio_activo": "Community Manager (Ventas por Mensajes)",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "Especialista",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": true,
+      "requiere_email_paciente": false,
+      "id_calendario": "eliyonaitorres@gmail.com",
+      "id_cuenta_publicitaria": {
+        "$numberLong": "697623523047675"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "557345070800965"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "61573691488425"
+      },
+      "id_pagina_ig": 17841472656061316,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": "2509012002A00061",
+      "notas": null,
+      "ubicaciones": []
+    },
+    {
+      "_id": "6a265962d2ff7e00bba648c8",
+      "num_cliente": "5957120854",
+      "id_proyecto": "MIG52026",
+      "nombre_proyecto": "MIG Mínima Invasión Ginecológica",
+      "nombre_cliente": "Eliyonai Torres",
+      "email_doctor": null,
+      "ciudades": "Área metropolitana de CDMX",
+      "fecha_inicio": {
+        "$date": "2026-05-15T00:00:00.000Z"
+      },
+      "monto_pago": 6500,
+      "tipo_pago": "Mensual",
+      "dias_pago": "15 de cada mes",
+      "servicio_activo": "Gestión de Redes Sociales (Meta)",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "El Potencial",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": false,
+      "requiere_email_paciente": false,
+      "id_calendario": null,
+      "id_cuenta_publicitaria": {
+        "$numberLong": "1078357180213838"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "1114341785101020"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "61589755166511"
+      },
+      "id_pagina_ig": 17841413031258448,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": null,
+      "notas": null,
+      "ubicaciones": []
+    }
   ],
-  '3': [],
+  "3488312467": [
+    {
+      "_id": "6a265962d2ff7e00bba648c1",
+      "num_cliente": "3488312467",
+      "id_proyecto": "MEC22026",
+      "nombre_proyecto": "MEC Studio Pilates",
+      "nombre_cliente": "Dyanzu Contreras",
+      "email_doctor": null,
+      "ciudades": "Edo Méx",
+      "fecha_inicio": {
+        "$date": "2026-02-01T00:00:00.000Z"
+      },
+      "monto_pago": 4500,
+      "tipo_pago": "Mensual",
+      "dias_pago": "1ero de cada mes",
+      "servicio_activo": "Gestión de Redes Sociales (Meta)",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "El Potencial",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": false,
+      "requiere_email_paciente": false,
+      "id_calendario": null,
+      "id_cuenta_publicitaria": {
+        "$numberLong": "1637664667596327"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "695977623608386"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "61579883619477"
+      },
+      "id_pagina_ig": 17841477125862496,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": null,
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "1635891656": [
+    {
+      "_id": "6a265962d2ff7e00bba648b4",
+      "num_cliente": "1635891656",
+      "id_proyecto": "DRCR92022",
+      "nombre_proyecto": "Beauty Clinic",
+      "nombre_cliente": "Claudia Ramirez",
+      "email_doctor": "beautynewclinic@gmail.com",
+      "ciudades": "Área metropolitana de CDMX",
+      "fecha_inicio": {
+        "$date": "2022-09-19T00:00:00.000Z"
+      },
+      "monto_pago": 6500,
+      "tipo_pago": "Mensual",
+      "dias_pago": "primer semana de cada mes",
+      "servicio_activo": "Community Manager (Ventas por Mensajes)",
+      "pago_comision": true,
+      "pago_adelantado": false,
+      "clasificacion": "Especialista",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": true,
+      "requiere_email_paciente": false,
+      "id_calendario": "beautynewclinic@gmail.com",
+      "id_cuenta_publicitaria": {
+        "$numberLong": "434482895417770"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "105319094687252"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "100063756900498"
+      },
+      "id_pagina_ig": 17841416597267724,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": "2609142002A00286",
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "6111315424": [
+    {
+      "_id": "6a265962d2ff7e00bba648b1",
+      "num_cliente": "6111315424",
+      "id_proyecto": "BEUN32020",
+      "nombre_proyecto": "Be unique",
+      "nombre_cliente": "Rafael García",
+      "email_doctor": "dr.rafael.a.garcia@gmail.com",
+      "ciudades": "Puebla/Guadalajara",
+      "fecha_inicio": {
+        "$date": "2020-03-10T00:00:00.000Z"
+      },
+      "monto_pago": 16000,
+      "tipo_pago": "Semanal",
+      "dias_pago": "Lunes de cada semana",
+      "servicio_activo": "Community Manager (Ventas por Mensajes)",
+      "pago_comision": false,
+      "pago_adelantado": false,
+      "clasificacion": "Empresario",
+      "activo": true,
+      "hace_jornadas": true,
+      "registro_consultas": true,
+      "requiere_email_paciente": false,
+      "id_calendario": "dr.rafael.a.garcia@gmail.com",
+      "id_cuenta_publicitaria": {
+        "$numberLong": "147738286569283"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "100158574944619"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "100064357406775"
+      },
+      "id_pagina_ig": 17841431712419600,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": null,
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "8571211919": [
+    {
+      "_id": "6a265962d2ff7e00bba648b3",
+      "num_cliente": "8571211919",
+      "id_proyecto": "DRLB102019",
+      "nombre_proyecto": "Dr. Leonardo Benitez",
+      "nombre_cliente": "Leonardo Bénitez",
+      "email_doctor": "dr.leonardo.benitez@gmail.com",
+      "ciudades": "Edo Méx",
+      "fecha_inicio": {
+        "$date": "2019-10-19T00:00:00.000Z"
+      },
+      "monto_pago": 16000,
+      "tipo_pago": "Mensual",
+      "dias_pago": "16 de cada mes",
+      "servicio_activo": "Community Manager (Ventas por Mensajes)",
+      "pago_comision": false,
+      "pago_adelantado": false,
+      "clasificacion": "Empresario",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": true,
+      "requiere_email_paciente": false,
+      "id_calendario": "dr.leonardo.benitez@gmail.com",
+      "id_cuenta_publicitaria": {
+        "$numberLong": "411246487385268"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "102667457824913"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "100068580013521"
+      },
+      "id_pagina_ig": 17841422931167006,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": null,
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "6212578976": [
+    {
+      "_id": "6a265962d2ff7e00bba648be",
+      "num_cliente": "6212578976",
+      "id_proyecto": "BEES52025",
+      "nombre_proyecto": "Be Esthetics",
+      "nombre_cliente": "Emilio Meza",
+      "email_doctor": "beestheticsmx@gmail.com",
+      "ciudades": "Edo Méx",
+      "fecha_inicio": {
+        "$date": "2025-05-29T00:00:00.000Z"
+      },
+      "monto_pago": 11000,
+      "tipo_pago": "Mensual",
+      "dias_pago": "último día del mes",
+      "servicio_activo": "Community Manager (Ventas por Mensajes)",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "El Potencial",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": true,
+      "requiere_email_paciente": false,
+      "id_calendario": "beestheticsmx@gmail.com",
+      "id_cuenta_publicitaria": {
+        "$numberLong": "4077310245850123"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "601560609708451"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "61574809775286"
+      },
+      "id_pagina_ig": 17841473576956252,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": null,
+      "notas": null,
+      "ubicaciones": []
+    },
+    {
+      "_id": "6a265962d2ff7e00bba648c6",
+      "num_cliente": "6212578976",
+      "id_proyecto": "MO52026",
+      "nombre_proyecto": "Medica Oriente",
+      "nombre_cliente": "Emilio Meza",
+      "email_doctor": "medicaoriente@gmail.com",
+      "ciudades": "Edo Méx",
+      "fecha_inicio": {
+        "$date": "2026-05-01T00:00:00.000Z"
+      },
+      "monto_pago": 7500,
+      "tipo_pago": "Mensual",
+      "dias_pago": "15 de cada mes",
+      "servicio_activo": "Community Manager (Ventas por Mensajes)",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "El Potencial",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": true,
+      "requiere_email_paciente": false,
+      "id_calendario": "medicaoriente@gmail.com",
+      "id_cuenta_publicitaria": {
+        "$numberLong": "1166442603208386"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "1163398650179624"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "61589246903433"
+      },
+      "id_pagina_ig": 17841410955044146,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": null,
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "4788572809": [
+    {
+      "_id": "6a265962d2ff7e00bba648bb",
+      "num_cliente": "4788572809",
+      "id_proyecto": "DRKD12025",
+      "nombre_proyecto": "Dra. Karem Delgado",
+      "nombre_cliente": "Karem Delgado",
+      "email_doctor": null,
+      "ciudades": "Área metropolitana de CDMX",
+      "fecha_inicio": {
+        "$date": "2025-01-20T00:00:00.000Z"
+      },
+      "monto_pago": 6500,
+      "tipo_pago": "Mensual",
+      "dias_pago": "20 de cada mes",
+      "servicio_activo": "Gestión de Redes Sociales (Meta)",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "Especialista",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": false,
+      "requiere_email_paciente": false,
+      "id_calendario": null,
+      "id_cuenta_publicitaria": {
+        "$numberLong": "587729097465449"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "180940198436060"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "61554496072077"
+      },
+      "id_pagina_ig": 17841438772641104,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": "2415142002A00055",
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "8659295934": [
+    {
+      "_id": "6a265962d2ff7e00bba648bc",
+      "num_cliente": "8659295934",
+      "id_proyecto": "DRMS32025",
+      "nombre_proyecto": "Dr. Misael Silva",
+      "nombre_cliente": "Misael Silva",
+      "email_doctor": null,
+      "ciudades": "Área metropolitana de CDMX",
+      "fecha_inicio": {
+        "$date": "2025-03-03T00:00:00.000Z"
+      },
+      "monto_pago": 8500,
+      "tipo_pago": "Mensual",
+      "dias_pago": "3 de cada mes",
+      "servicio_activo": "Gestión de Redes Sociales (Meta)",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "El Potencial",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": false,
+      "requiere_email_paciente": false,
+      "id_calendario": null,
+      "id_cuenta_publicitaria": {
+        "$numberLong": "842632368882647"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "577302588799394"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "61573466326792"
+      },
+      "id_pagina_ig": 17841453659573856,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": "2509152002A00215",
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "7369202522": [
+    {
+      "_id": "6a265962d2ff7e00bba648b6",
+      "num_cliente": "7369202522",
+      "id_proyecto": "CVLM52023",
+      "nombre_proyecto": "Vanguardía quirurgíca",
+      "nombre_cliente": "Luis Médina",
+      "email_doctor": null,
+      "ciudades": "Área metropolitana de CDMX",
+      "fecha_inicio": {
+        "$date": "2023-05-02T00:00:00.000Z"
+      },
+      "monto_pago": 7500,
+      "tipo_pago": "Mensual",
+      "dias_pago": "15 de cada mes",
+      "servicio_activo": "Gestión de Redes Sociales (Meta)",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "Empresario",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": false,
+      "requiere_email_paciente": false,
+      "id_calendario": null,
+      "id_cuenta_publicitaria": {
+        "$numberLong": "1503542780174084"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "833960760094302"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "100063611856644"
+      },
+      "id_pagina_ig": 17841405965396942,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": "223300202A1641",
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "4189818819": [
+    {
+      "_id": "6a265962d2ff7e00bba648c3",
+      "num_cliente": "4189818819",
+      "id_proyecto": "CLRHE22026",
+      "nombre_proyecto": "Clinica Rhenals",
+      "nombre_cliente": "Carlos David Rhenals",
+      "email_doctor": null,
+      "ciudades": "Área metropolitana de CDMX",
+      "fecha_inicio": {
+        "$date": "2026-02-18T00:00:00.000Z"
+      },
+      "monto_pago": 7500,
+      "tipo_pago": "Mensual",
+      "dias_pago": "27 de cada mes",
+      "servicio_activo": "Gestión de Redes Sociales (Meta)",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "Empresario",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": false,
+      "requiere_email_paciente": false,
+      "id_calendario": null,
+      "id_cuenta_publicitaria": {
+        "$numberLong": "1091607886020016"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "943422385676031"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "100028607637310"
+      },
+      "id_pagina_ig": 17841407678634544,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": null,
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "1799035743": [
+    {
+      "_id": "6a265962d2ff7e00bba648b5",
+      "num_cliente": "1799035743",
+      "id_proyecto": "DRIC52021",
+      "nombre_proyecto": "Dr. Cervantes",
+      "nombre_cliente": "Irvin Cervantes",
+      "email_doctor": "irvincervantes91@gmail.com",
+      "ciudades": "Puebla",
+      "fecha_inicio": {
+        "$date": "2021-05-13T00:00:00.000Z"
+      },
+      "monto_pago": 11000,
+      "tipo_pago": "Mensual",
+      "dias_pago": "último día del mes",
+      "servicio_activo": "Community Manager (Ventas por Mensajes)",
+      "pago_comision": false,
+      "pago_adelantado": false,
+      "clasificacion": "Empresario",
+      "activo": true,
+      "hace_jornadas": true,
+      "registro_consultas": true,
+      "requiere_email_paciente": false,
+      "id_calendario": "irvincervantes91@gmail.com",
+      "id_cuenta_publicitaria": 66108083,
+      "id_cuenta_anuncios": {
+        "$numberLong": "120533894369936"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "100093120619688"
+      },
+      "id_pagina_ig": 17841454332681028,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": "2521062002A00221",
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "7955538957": [
+    {
+      "_id": "6a265962d2ff7e00bba648b8",
+      "num_cliente": "7955538957",
+      "id_proyecto": "DRIR42024",
+      "nombre_proyecto": "Dr. Ignacio Reyes",
+      "nombre_cliente": "Ignacio Reyes",
+      "email_doctor": "reyesgine@gmail.com",
+      "ciudades": "Área metropolitana de CDMX",
+      "fecha_inicio": {
+        "$date": "2024-04-30T00:00:00.000Z"
+      },
+      "monto_pago": 6500,
+      "tipo_pago": "Mensual",
+      "dias_pago": "7 de cada mes",
+      "servicio_activo": "Community Manager (Ventas por Mensajes)",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "Especialista",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": true,
+      "requiere_email_paciente": true,
+      "id_calendario": null,
+      "id_cuenta_publicitaria": {
+        "$numberLong": "397707645423325"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "163708640804799"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "163708640804799"
+      },
+      "id_pagina_ig": 17841448221221020,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": "2609142002A00114",
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "4066939935": [
+    {
+      "_id": "6a265962d2ff7e00bba648ca",
+      "num_cliente": "4066939935",
+      "id_proyecto": "DRAM52026",
+      "nombre_proyecto": "Dr. Andres Montesinos",
+      "nombre_cliente": "Andres Montesinos",
+      "email_doctor": "andres87montesinos@gmail.com",
+      "ciudades": "Puebla",
+      "fecha_inicio": {
+        "$date": "2026-05-26T00:00:00.000Z"
+      },
+      "monto_pago": 6500,
+      "tipo_pago": "Mensual",
+      "dias_pago": "26 de cada mes",
+      "servicio_activo": "Community Manager (Ventas por Mensajes)",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "El Potencial",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": true,
+      "requiere_email_paciente": false,
+      "id_calendario": "andres87montesinos@gmail.com",
+      "id_cuenta_publicitaria": {
+        "$numberLong": "1389436962326666"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "643524272174062"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "61575283933891"
+      },
+      "id_pagina_ig": 17841409968350988,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": null,
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "1189905824": [
+    {
+      "_id": "6a265962d2ff7e00bba648c4",
+      "num_cliente": "1189905824",
+      "id_proyecto": "DRMC42026",
+      "nombre_proyecto": "Dr. Michel Alán Chávez",
+      "nombre_cliente": "Michel Alán Chávez",
+      "email_doctor": "alanchavez992@gmail.com",
+      "ciudades": "Área metropolitana de CDMX",
+      "fecha_inicio": {
+        "$date": "2026-04-01T00:00:00.000Z"
+      },
+      "monto_pago": 11000,
+      "tipo_pago": "Mensual",
+      "dias_pago": "Primero de cada mes",
+      "servicio_activo": "Community Manager (Ventas por Mensajes)",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "El Potencial",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": true,
+      "requiere_email_paciente": false,
+      "id_calendario": "alanchavez992@gmail.com",
+      "id_cuenta_publicitaria": {
+        "$numberLong": "1597997738032217"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "861739363681675"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "61582137685418"
+      },
+      "id_pagina_ig": 17841477674332520,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": null,
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "7221562784": [
+    {
+      "_id": "6a265962d2ff7e00bba648cb",
+      "num_cliente": "7221562784",
+      "id_proyecto": "DRANV52026",
+      "nombre_proyecto": "Dra. Nancy Verdin",
+      "nombre_cliente": "Nancy Verdin",
+      "email_doctor": null,
+      "ciudades": "Tijuana",
+      "fecha_inicio": {
+        "$date": "2026-05-04T00:00:00.000Z"
+      },
+      "monto_pago": 3500,
+      "tipo_pago": "Mensual",
+      "dias_pago": "6 de cada mes",
+      "servicio_activo": "Gestión Estratégica de Campañas Digitales con BI",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "El Potencial",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": false,
+      "requiere_email_paciente": false,
+      "id_calendario": null,
+      "id_cuenta_publicitaria": {
+        "$numberLong": "1132433723281131"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "100509592583521"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "100078899675247"
+      },
+      "id_pagina_ig": 17841452325071532,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": "2402022002A00160",
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "5859345681": [
+    {
+      "_id": "6a265962d2ff7e00bba648b2",
+      "num_cliente": "5859345681",
+      "id_proyecto": "DRPO32023",
+      "nombre_proyecto": "Dr. PO",
+      "nombre_cliente": "Oscar Pérez Osorio",
+      "email_doctor": "surgery.drpo@gmail.com@gmail.com",
+      "ciudades": "Área metropolitana de CDMX",
+      "fecha_inicio": {
+        "$date": "2023-03-31T00:00:00.000Z"
+      },
+      "monto_pago": 4500,
+      "tipo_pago": "Mensual",
+      "dias_pago": "Primera semana del mes",
+      "servicio_activo": "Community Manager (Ventas por Mensajes)",
+      "pago_comision": true,
+      "pago_adelantado": false,
+      "clasificacion": "El Potencial",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": true,
+      "requiere_email_paciente": false,
+      "id_calendario": null,
+      "id_cuenta_publicitaria": {
+        "$numberLong": "1230176224252033"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "112003105276567"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "100094234268115"
+      },
+      "id_pagina_ig": 17841407555496936,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": null,
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "1662931241": [
+    {
+      "_id": "6a265962d2ff7e00bba648b7",
+      "num_cliente": "1662931241",
+      "id_proyecto": "DRFM72025",
+      "nombre_proyecto": "Dr. Fernando Méndez",
+      "nombre_cliente": "Fernando Méndez",
+      "email_doctor": "fer_93si@hotmail.com",
+      "ciudades": "Área metropolitana de CDMX",
+      "fecha_inicio": {
+        "$date": "2025-07-07T00:00:00.000Z"
+      },
+      "monto_pago": 4500,
+      "tipo_pago": "Mensual",
+      "dias_pago": "7 de cada mes",
+      "servicio_activo": "Community Manager (Ventas por Mensajes)",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "Especialista",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": true,
+      "requiere_email_paciente": false,
+      "id_calendario": null,
+      "id_cuenta_publicitaria": {
+        "$numberLong": "1421495499319126"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "695128037015606"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "61578193617775"
+      },
+      "id_pagina_ig": 17841475658636128,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": null,
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "3939162642": [
+    {
+      "_id": "6a265962d2ff7e00bba648c2",
+      "num_cliente": "3939162642",
+      "id_proyecto": "DRAKB22026",
+      "nombre_proyecto": "Dra. Karla Bendia",
+      "nombre_cliente": "Karla Bendia",
+      "email_doctor": null,
+      "ciudades": "Área metropolitana de CDMX",
+      "fecha_inicio": {
+        "$date": "2026-02-16T00:00:00.000Z"
+      },
+      "monto_pago": 7500,
+      "tipo_pago": "Mensual",
+      "dias_pago": "16 de cada mes",
+      "servicio_activo": "Gestión de Redes Sociales (Meta)",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "Especialista",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": false,
+      "requiere_email_paciente": false,
+      "id_calendario": null,
+      "id_cuenta_publicitaria": {
+        "$numberLong": "822800430776594"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "664913863363810"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "61574802313775"
+      },
+      "id_pagina_ig": 17841469620714284,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": "2609012002A00080",
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "5886543300": [
+    {
+      "_id": "6a265962d2ff7e00bba648b9",
+      "num_cliente": "5886543300",
+      "id_proyecto": "DRAM82024",
+      "nombre_proyecto": "Dr. Alejandro Médina",
+      "nombre_cliente": "Alejandro Médina",
+      "email_doctor": null,
+      "ciudades": "Área metropolitana de CDMX",
+      "fecha_inicio": {
+        "$date": "2024-08-05T00:00:00.000Z"
+      },
+      "monto_pago": 6500,
+      "tipo_pago": "Mensual",
+      "dias_pago": "3 de cada mes",
+      "servicio_activo": "Gestión de Redes Sociales (Meta)",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "El Potencial",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": false,
+      "requiere_email_paciente": false,
+      "id_calendario": null,
+      "id_cuenta_publicitaria": {
+        "$numberLong": "412814497889908"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "363834876819849"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "61563366241943"
+      },
+      "id_pagina_ig": 17841444458351352,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": null,
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "9432418089": [
+    {
+      "_id": "6a265962d2ff7e00bba648bd",
+      "num_cliente": "9432418089",
+      "id_proyecto": "MAMX72025",
+      "nombre_proyecto": "Magneto MX",
+      "nombre_cliente": "Ernesto Ramírez",
+      "email_doctor": null,
+      "ciudades": "México/Centroamerica",
+      "fecha_inicio": {
+        "$date": "2025-07-08T00:00:00.000Z"
+      },
+      "monto_pago": 6000,
+      "tipo_pago": "Mensual",
+      "dias_pago": "4 de cada mes",
+      "servicio_activo": "Gestión de Redes Sociales (Meta)",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "Empresario",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": false,
+      "requiere_email_paciente": false,
+      "id_calendario": null,
+      "id_cuenta_publicitaria": {
+        "$numberLong": "633561063109920"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "753120394544065"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "61577925973166"
+      },
+      "id_pagina_ig": null,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": null,
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "6927698008": [
+    {
+      "_id": "6a265962d2ff7e00bba648c0",
+      "num_cliente": "6927698008",
+      "id_proyecto": "DRTA12026",
+      "nombre_proyecto": "Dra. Tania Alcala",
+      "nombre_cliente": "Tania Alcala",
+      "email_doctor": null,
+      "ciudades": "Área metropolitana de CDMX",
+      "fecha_inicio": {
+        "$date": "2026-01-27T00:00:00.000Z"
+      },
+      "monto_pago": 6500,
+      "tipo_pago": "Mensual",
+      "dias_pago": "último día del mes",
+      "servicio_activo": "Gestión de Redes Sociales (Meta)",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "Especialista",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": false,
+      "requiere_email_paciente": false,
+      "id_calendario": null,
+      "id_cuenta_publicitaria": {
+        "$numberLong": "2018971302084325"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "630688606793854"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "61575695074721"
+      },
+      "id_pagina_ig": 17841473317885632,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": "2509022002A00019",
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "4320563416": [
+    {
+      "_id": "6a265962d2ff7e00bba648ba",
+      "num_cliente": "4320563416",
+      "id_proyecto": "PW42025",
+      "nombre_proyecto": "Pretty Woman",
+      "nombre_cliente": "Irving de la Sancha",
+      "email_doctor": null,
+      "ciudades": "Puebla",
+      "fecha_inicio": {
+        "$date": "2025-04-29T00:00:00.000Z"
+      },
+      "monto_pago": 10000,
+      "tipo_pago": "Mensual",
+      "dias_pago": "20 de cada mes",
+      "servicio_activo": "Community Manager (Ventas por Mensajes)",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "El Potencial",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": true,
+      "requiere_email_paciente": false,
+      "id_calendario": null,
+      "id_cuenta_publicitaria": {
+        "$numberLong": "1786238132234543"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "1786238132234543"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "100093831216924"
+      },
+      "id_pagina_ig": 17841460052924476,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": null,
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "3318939558": [
+    {
+      "_id": "6a265962d2ff7e00bba648c9",
+      "num_cliente": "3318939558",
+      "id_proyecto": "DRASM52026",
+      "nombre_proyecto": "Dra. Selene de la Mora",
+      "nombre_cliente": "Selene de la Mora",
+      "email_doctor": "dra.selenedlmora@gmail.com",
+      "ciudades": "Área metropolitana de CDMX",
+      "fecha_inicio": {
+        "$date": "2026-05-24T00:00:00.000Z"
+      },
+      "monto_pago": 5000,
+      "tipo_pago": "Mensual",
+      "dias_pago": "24 de cada mes",
+      "servicio_activo": "Community Manager (Ventas por Mensajes)",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "El Potencial",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": true,
+      "requiere_email_paciente": false,
+      "id_calendario": "dra.selenedlmora@gmail.com",
+      "id_cuenta_publicitaria": {
+        "$numberLong": "1489913875545769"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "705894829270300"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "61577970298112"
+      },
+      "id_pagina_ig": 17841429208333788,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": null,
+      "notas": null,
+      "ubicaciones": []
+    }
+  ],
+  "8848083096": [
+    {
+      "_id": "6a265962d2ff7e00bba648c5",
+      "num_cliente": "8848083096",
+      "id_proyecto": "DRJP42026",
+      "nombre_proyecto": "Dr. Javier Piri",
+      "nombre_cliente": "Javier Piri",
+      "email_doctor": null,
+      "ciudades": "Tijuana",
+      "fecha_inicio": {
+        "$date": "2026-04-03T00:00:00.000Z"
+      },
+      "monto_pago": 3500,
+      "tipo_pago": "Mensual",
+      "dias_pago": "6 de cada mes",
+      "servicio_activo": "Gestión Estratégica de Campañas Digitales con BI",
+      "pago_comision": false,
+      "pago_adelantado": true,
+      "clasificacion": "El Potencial",
+      "activo": true,
+      "hace_jornadas": false,
+      "registro_consultas": false,
+      "requiere_email_paciente": false,
+      "id_calendario": null,
+      "id_cuenta_publicitaria": {
+        "$numberLong": "576490466732243"
+      },
+      "id_cuenta_anuncios": {
+        "$numberLong": "108738800551080"
+      },
+      "id_pagina_fb": {
+        "$numberLong": "100064251122768"
+      },
+      "id_pagina_ig": 17841423414223348,
+      "id_cuenta_publicitaria_google": null,
+      "cedula_profesional": "2402022002A00144",
+      "notas": null,
+      "ubicaciones": []
+    }
+  ]
 };
 
 // ═══════════════════════════════════════
@@ -535,13 +1881,25 @@ window.addEventListener('load', () => {
 // ═══════════════════════════════════════
 // APP INIT
 // ═══════════════════════════════════════
-function iniciarApp() {
+async function iniciarApp() {
   document.getElementById('app').style.display = 'flex';
-  // Usar mock por ahora, luego reemplazar con fetch a n8n
-  clientes = MOCK_CLIENTES;
-  proyectosPorCliente = MOCK_PROYECTOS;
+  try {
+    const res = await crmRequest('get-clientes');
+    clientes = res.data || MOCK_CLIENTES;
+  } catch(e) {
+    console.warn('Usando datos mock:', e);
+    clientes = MOCK_CLIENTES;
+  }
   renderSidebar();
 }
+
+// AUTO-LOGIN temporal — quitar cuando se active Google Login
+usuarioActual = { nombre: 'Adrian Vera', rol: 'Admin', esAdmin: true, email: 'adrianvg3107@gmail.com' };
+document.getElementById('user-chip').classList.add('visible');
+document.getElementById('user-initials').textContent = 'AV';
+document.getElementById('user-name').textContent = 'Adrian Vera';
+document.getElementById('user-role').textContent = 'Admin';
+document.addEventListener('DOMContentLoaded', () => iniciarApp());
 
 // ═══════════════════════════════════════
 // SIDEBAR
@@ -557,7 +1915,7 @@ function renderSidebar(filtro = '') {
   document.getElementById('stat-fee').textContent = '$' + (feeTotal/1000).toFixed(0) + 'k';
 
   lista.innerHTML = filtrados.map(c => {
-    const proyectos = proyectosPorCliente[c._id] || [];
+    const proyectos = proyectosPorCliente[c.num_cliente] || proyectosPorCliente[c._id] || [];
     const actProyectos = proyectos.filter(p => p.activo).length;
     const isActive = clienteActivo?._id === c._id;
     const iniciales = c.nombre.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
@@ -578,7 +1936,7 @@ function filtrarClientes(val) { renderSidebar(val); }
 
 function calcFeeTotal() {
   return clientes.filter(c => c.activo).reduce((sum, c) => {
-    const ps = proyectosPorCliente[c._id] || [];
+    const ps = proyectosPorCliente[c.num_cliente] || proyectosPorCliente[c._id] || [];
     return sum + ps.filter(p => p.activo).reduce((s, p) => s + (p.monto_pago || 0), 0);
   }, 0);
 }
@@ -586,12 +1944,24 @@ function calcFeeTotal() {
 // ═══════════════════════════════════════
 // SELECCIONAR CLIENTE
 // ═══════════════════════════════════════
-function seleccionarCliente(id) {
+async function seleccionarCliente(id) {
   clienteActivo = clientes.find(c => c._id === id);
   if (!clienteActivo) return;
   renderSidebar(document.getElementById('search-input').value);
   document.getElementById('empty-state').style.display = 'none';
   document.getElementById('client-detail').classList.add('visible');
+
+  // Cargar proyectos si no están en caché (join por num_cliente)
+  const numCli = clienteActivo.num_cliente;
+  if (!proyectosPorCliente[numCli] && !proyectosPorCliente[id]) {
+    try {
+      const res = await crmRequest('get-proyectos', { num_cliente: clienteActivo.num_cliente });
+      proyectosPorCliente[numCli] = res.data || MOCK_PROYECTOS[numCli] || [];
+    } catch(e) {
+      proyectosPorCliente[id] = MOCK_PROYECTOS[id] || [];
+    }
+  }
+
   renderClienteDetalle();
   switchTab('info');
 }
@@ -609,6 +1979,7 @@ function renderClienteDetalle() {
     <div class="info-field"><label>Nombre completo</label><div class="val">${c.nombre}</div></div>
     <div class="info-field"><label>Clasificación</label><div class="val">${c.clasificacion}</div></div>
     <div class="info-field"><label>Celular personal</label><div class="val">${c.celular_personal || '—'}</div></div>
+    <div class="info-field"><label>ID Cliente</label><div class="val mono" style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--emerald);letter-spacing:0.05em;">${c.num_cliente || '—'}</div></div>
     <div class="info-field"><label>ID Portafolio Comercial</label><div class="val mono">${c.id_portafolio_comercial || '—'}</div></div>
     <div class="info-field"><label>Cumpleaños</label><div class="val">${c.cumpleanos || '—'}</div></div>
     <div class="info-field"><label>Cliente desde</label><div class="val">${c.created_at ? c.created_at.slice(0,10) : '—'}</div></div>
@@ -632,12 +2003,36 @@ function switchTab(tab) {
 // PROYECTOS
 // ═══════════════════════════════════════
 function renderProyectos() {
-  const proyectos = proyectosPorCliente[clienteActivo._id] || [];
+  const proyectos = proyectosPorCliente[clienteActivo.num_cliente] || proyectosPorCliente[clienteActivo._id] || [];
   const activos = proyectos.filter(p => p.activo);
   const feeCliente = activos.reduce((s, p) => s + (p.monto_pago || 0), 0);
 
   document.getElementById('fee-total').textContent = '$' + feeCliente.toLocaleString('es-MX');
   document.getElementById('fee-desglose').textContent = `${activos.length} proyecto${activos.length !== 1 ? 's' : ''} activo${activos.length !== 1 ? 's' : ''}`;
+
+  // Calcular antigüedad desde el proyecto más antiguo
+  const fechasInicio = proyectos
+    .filter(p => p.fecha_inicio)
+    .map(p => new Date(p.fecha_inicio))
+    .filter(d => !isNaN(d));
+
+  if (fechasInicio.length > 0) {
+    const fechaMasAntigua = new Date(Math.min(...fechasInicio));
+    const hoy = new Date();
+    const diffMs = hoy - fechaMasAntigua;
+    const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const anios = Math.floor(diffDias / 365);
+    const meses = Math.floor((diffDias % 365) / 30);
+    let antiguedadStr = '';
+    if (anios > 0) antiguedadStr += `${anios} año${anios !== 1 ? 's' : ''}`;
+    if (meses > 0) antiguedadStr += `${anios > 0 ? ' ' : ''}${meses} mes${meses !== 1 ? 'es' : ''}`;
+    if (!antiguedadStr) antiguedadStr = `${diffDias} días`;
+    document.getElementById('antiguedad-valor').textContent = antiguedadStr;
+    document.getElementById('antiguedad-desde').textContent = `desde ${fechaMasAntigua.toLocaleDateString('es-MX', { month: 'short', year: 'numeric' })}`;
+  } else {
+    document.getElementById('antiguedad-valor').textContent = '—';
+    document.getElementById('antiguedad-desde').textContent = 'sin fecha de inicio';
+  }
 
   // Breakdown por tipo de pago
   const byTipo = {};
@@ -646,10 +2041,7 @@ function renderProyectos() {
     `<div class="fee-item"><div class="f-num">$${monto.toLocaleString('es-MX')}</div><div class="f-lbl">${tipo}</div></div>`
   ).join('');
 
-  // Lista
   document.getElementById('proyectos-list').innerHTML = proyectos.map(p => renderProyectoCard(p)).join('');
-
-  // Mostrar/ocultar add proyecto según permisos
   document.getElementById('btn-add-proyecto').style.display = usuarioActual?.esAdmin ? 'block' : 'none';
 }
 
@@ -792,9 +2184,14 @@ function guardarCambiosProyecto(id) {
   const p = ps.find(x => x._id === id);
   if (p) Object.assign(p, cambios);
   delete cambiosPendientes[id];
-  mostrarToast('Cambios guardados ✓', 'success');
+  mostrarToast('Guardando...', '');
+  try {
+    await crmRequest('update-proyecto', { _id: id, ...cambios });
+    mostrarToast('Cambios guardados ✓', 'success');
+  } catch(e) {
+    mostrarToast('Error al guardar', 'error');
+  }
   renderProyectos();
-  // TODO: POST a N8N.updateProyecto con { _id: id, ...cambios }
 }
 
 // ═══════════════════════════════════════
@@ -812,11 +2209,30 @@ function editarCliente() {
 }
 
 function toggleActivoCliente() {
-  clienteActivo.activo = !clienteActivo.activo;
-  mostrarToast(clienteActivo.activo ? 'Cliente activado' : 'Cliente desactivado', 'success');
+  const nuevoEstado = !clienteActivo.activo;
+  const accion = nuevoEstado ? 'activar' : 'desactivar';
+  const proyectos = proyectosPorCliente[clienteActivo.num_cliente] || proyectosPorCliente[clienteActivo._id] || [];
+  const proyectosActivos = proyectos.filter(p => p.activo).length;
+
+  let msg = `¿${nuevoEstado ? 'Activar' : 'Desactivar'} a ${clienteActivo.nombre}?`;
+  if (!nuevoEstado && proyectosActivos > 0) {
+    msg += `\n\nEsto también desactivará sus ${proyectosActivos} proyecto${proyectosActivos !== 1 ? 's' : ''} activo${proyectosActivos !== 1 ? 's' : ''}.`;
+  }
+  if (!confirm(msg)) return;
+
+  clienteActivo.activo = nuevoEstado;
+
+  // Desactivar/activar todos sus proyectos
+  proyectos.forEach(p => { p.activo = nuevoEstado; });
+
+  try {
+    await crmRequest('update-cliente', { _id: clienteActivo._id, activo: nuevoEstado });
+    mostrarToast(nuevoEstado ? '✓ Cliente activado' : '✓ Cliente y proyectos desactivados', 'success');
+  } catch(e) {
+    mostrarToast('Error al actualizar', 'error');
+  }
   renderClienteDetalle();
   renderSidebar();
-  // TODO: n8n update
 }
 
 // ═══════════════════════════════════════
@@ -836,16 +2252,72 @@ function cerrarModal(id) { document.getElementById(id).classList.remove('visible
 function guardarCliente() {
   const nombre = document.getElementById('mc-nombre').value.trim();
   if (!nombre) { mostrarToast('El nombre es requerido', 'error'); return; }
-  // TODO: POST a N8N.createCliente / updateCliente
-  mostrarToast('Cliente guardado ✓', 'success');
+  // Generar num_cliente de 10 dígitos para nuevos clientes
+  function generarNumCliente() {
+    return String(Math.floor(Math.random() * 9000000000) + 1000000000);
+  }
+
+  const payload = {
+    nombre:                  document.getElementById('mc-nombre').value.trim(),
+    clasificacion:           document.getElementById('mc-clasificacion').value,
+    celular_personal:        document.getElementById('mc-celular').value.trim() || null,
+    id_portafolio_comercial: document.getElementById('mc-portafolio').value.trim() || null,
+    cumpleanos:              document.getElementById('mc-cumple').value || null,
+    activo:                  true,
+  };
+  const esEdicion = document.getElementById('modal-cliente-title').textContent === 'Editar cliente';
+  try {
+    if (esEdicion) {
+      await crmRequest('update-cliente', { num_cliente: clienteActivo.num_cliente, ...payload });
+      Object.assign(clienteActivo, payload);
+    } else {
+      const numCliente = generarNumCliente();
+      payload.num_cliente = numCliente;
+      payload.created_at = new Date().toISOString();
+      payload.updated_at = new Date().toISOString();
+      const res = await crmRequest('create-cliente', payload);
+      clientes.push({ _id: res.data?.[0]?._id || Date.now().toString(), ...payload });
+    }
+    mostrarToast('Cliente guardado ✓', 'success');
+    renderSidebar();
+    if (esEdicion) renderClienteDetalle();
+  } catch(e) {
+    mostrarToast('Error al guardar cliente', 'error');
+  }
   cerrarModal('modal-cliente');
 }
 
 function guardarProyecto() {
   const nombre = document.getElementById('mp-nombre').value.trim();
   if (!nombre) { mostrarToast('El nombre del proyecto es requerido', 'error'); return; }
-  // TODO: POST a N8N.createProyecto
-  mostrarToast('Proyecto creado ✓', 'success');
+  const payload = {
+    nombre_proyecto:  document.getElementById('mp-nombre').value.trim(),
+    id_proyecto:      document.getElementById('mp-id').value.trim(),
+    email_doctor:     document.getElementById('mp-email').value.trim() || null,
+    ciudades:         document.getElementById('mp-ciudades').value.trim() || null,
+    monto_pago:       Number(document.getElementById('mp-monto').value) || 0,
+    tipo_pago:        document.getElementById('mp-tipo-pago').value,
+    dias_pago:        document.getElementById('mp-dias').value.trim() || null,
+    servicio_activo:  document.getElementById('mp-servicio').value.trim() || null,
+    fecha_inicio:     document.getElementById('mp-fecha').value || null,
+    nomenclatura:     document.getElementById('mp-nomenclatura').value.trim() || null,
+    nombre_cliente:   clienteActivo.nombre,
+    num_cliente:      clienteActivo.num_cliente,
+    activo:           true,
+    hace_jornadas:    false,
+    registro_consultas: false,
+    pago_comision:    false,
+    pago_adelantado:  false,
+  };
+  try {
+    await crmRequest('create-proyecto', payload);
+    if (!proyectosPorCliente[clienteActivo._id]) proyectosPorCliente[clienteActivo._id] = [];
+    proyectosPorCliente[clienteActivo._id].push({ _id: Date.now().toString(), ...payload });
+    mostrarToast('Proyecto creado ✓', 'success');
+    renderProyectos();
+  } catch(e) {
+    mostrarToast('Error al crear proyecto', 'error');
+  }
   cerrarModal('modal-proyecto');
 }
 
